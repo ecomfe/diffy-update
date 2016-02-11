@@ -2,3 +2,4 @@ edp-build-config.js
 doc/api
 node_modules
 test/coverage
+npm-debug.log
