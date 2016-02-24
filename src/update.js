@@ -1,6 +1,6 @@
 /**
  * EMC (EFE Model & Collection)
- * Copyright 2015 Baidu Inc. All rights reserved.
+ * Copyright 2016 Baidu Inc. All rights reserved.
  *
  * @file update helper module
  * @author otakustay
@@ -127,9 +127,9 @@ const AVAILABLE_COMMANDS = {
 };
 
 /**
- * 判断一个对象是否为diff节点
+ * 判断一个对象是否为差异节点
  *
- * 如果一个对象为diff节点，那么它有且仅有以下属性：
+ * 如果一个对象为差异节点，那么它有且仅有以下属性：
  *
  * - `changeType`表示修改的类型，值为`"add"`、`"remove"`或者`"change"`
  * - `oldValue`表示修改前的值，如果`changeType`为`"add"`则值恒定为`undefined`
@@ -143,23 +143,21 @@ export function isDiffNode(node) {
 }
 
 /**
- * Update an object following given command, return a new obejct
- * and a diff between 2 objects, original object is not modified to ensure immutability.
+ * 根据提供的指令更新一个对象，返回更新后的新对象以及新旧对象的差异（diff），原对象不会作任何的修改
  *
- * Available commands are：
+ * 现有支持的指令包括：
  *
- * - `$set` for changing the value.
- * - `$push` for adding a value at the end of an array.
- * - `$unshift` for adding a value at the beginning of an array.
- * - `$merge` for shallow merging two objects.
- * - `$defaults` for filling default (override `undefined`) values.
- * - `$invoke` for invoking a factory function to get the value and then perform a `$set` command,
- *     the old value is provided as the only parameter for the factory function
+ * - `$set`：修改指定的属性值
+ * - `$push`：向类型为数组的属性尾部添加元素
+ * - `$unshift`：向类型为数组的属性头部添加元素
+ * - `$merge`：将2个对象进行浅合并（不递归）
+ * - `$defaults`：将指定对象的属性值填到原属性为`undefined`的属性上
+ * - `$invoke`：用一个工厂函数的返回值作为`$set`指令的输入，工厂函数接受属性的旧值作为唯一的参数
  *
- * It is possible to use multiple commands simultaneously：
+ * 可以在一次更新操作中对不同的属性用不同的指令：
  *
  * ```javascript
- * import update from 'emc/update';
+ * import {withDiff} from 'diffy-update';
  *
  * let [newObject, diff] = withDiff(
  *     source,
@@ -171,7 +169,7 @@ export function isDiffNode(node) {
  * );
  * ```
  *
- * `update` function returns a `diff` object as the second item of the returning array, `diff` object is something like:
+ * 该函数返回一个数组，其中第二个元素为对象更新前后的差异，一个差异对象大致有以下结构：
  *
  * ```javascript
  * {
@@ -185,17 +183,18 @@ export function isDiffNode(node) {
  * }
  * ```
  *
- * We can use a simple object iteration over this object to find a minumum difference between 2 objects,
- * all leaves of `diff` object contains a `changeType` property which indicates the change type of this property.
+ * 我们可以对差异对象进行简单的遍历，其中通过`isDiffNode`函数判断的节点即为差异节点，因此我们可以找到对象更新前后的最小差异
  *
- * @param {Object} source The source obejct.
- * @param {Object} commands The update command.
- * @return {Array} A tuple contains [newObject, diff].
- *     `newObject` is a new obejct with properties updated,
+ * **需注意的是当前版本并未实现数组类型的差异描述**
+ *
+ * @param {Object} 待更新的对象
+ * @param {Object} 用于更新的指令
+ * @return {Array} 函数返回一个数组，结构为`[newObject, diff]`，其中
+ *     `newObject`为更新后的对象，`diff`为更新前后的差异,
  *     `diff` is a diff object between the original object and the modified one.
  */
 export function withDiff(source, commands) {
-    // If the root is a update command, perform update on `source` object, no further property iteration is required.
+    // 如果根节点就是个指令，那么直接对输入的对象进行操作，不需要再遍历属性了
     let possibleRootCommand = Object.keys(AVAILABLE_COMMANDS).filter(::commands.hasOwnProperty)[0];
     if (possibleRootCommand) {
         let wrapper = {source};
@@ -208,7 +207,7 @@ export function withDiff(source, commands) {
     let result = Object.keys(commands).reduce(
         (result, key) => {
             let propertyCommand = commands[key];
-            // If this is a command node, perform update on current property
+            // 找到指令节点后，对当前属性进行更新
             let tryExecuteCommand = ([command, execute]) => {
                 if (propertyCommand.hasOwnProperty(command)) {
                     let [newValue, propertyDiff] = execute(result, key, propertyCommand[command]);
@@ -221,7 +220,7 @@ export function withDiff(source, commands) {
                 return false;
             };
             let isCommand = Object.entries(AVAILABLE_COMMANDS).some(tryExecuteCommand);
-            // If it is not a command node, it indicates a command in nested objects, recurse to find that.
+            // 如果这个节点不代表指令，那么肯定它的某个属性（或子属性）是指令，继续递归往下找
             if (!isCommand) {
                 let [newValue, propertyDiff] = withDiff(result[key] || {}, propertyCommand);
                 result[key] = newValue;
@@ -260,89 +259,89 @@ function buildPathObject(path, value) {
 }
 
 /**
- * A short function for `withDiff` method which only returns the updated target without `diff` object.
+ * 效果等同于`withDiff`函数，但不返回差异对象
  *
- * @param {Object} source The source obejct.
- * @param {Object} commands The update command.
- * @return {Object} The updated target.
+ * @param {Object} 待更新的对象
+ * @param {Object} 用于更新的指令
+ * @return {Object} 更新后的新对象
  */
 export default function update(source, commands) {
     return withDiff(source, commands)[0];
 }
 
 /**
- * A shortcut function for `$set` command.
+ * 针对`$set`指令的快捷函数
  *
- * @param {Object} source The source object.
- * @param {string?|Array.<string>} path The path of a property, use array for nested property path,
- *     if this parameter is not not `undefined` or `null`, the command will be performed on the source object.
- * @param {*} value The new value.
- * @return {Object} A new obejct with properties updated.
+ * @param {Object} source 待更新的对象
+ * @param {string?|Array.<string>} path 属性的路径，如果更新二层以上的属性则需要提供一个字符串数组，
+ *     如果该参数为`undefined`或`null`，则会直接对`source`对象进行更新操作
+ * @param {*} value 用于更新的值
+ * @return {Object} 更新后的新对象
  */
 export function set(source, path, value) {
     return update(source, buildPathObject(path, {$set: value}));
 }
 
 /**
- * A shortcut function for `$push` command.
+ * 针对`$push`指令的快捷函数
  *
- * @param {Object} source The source object.
- * @param {string?|Array.<string>} path The path of a property, use array for nested property path,
- *     if this parameter is not not `undefined` or `null`, the command will be performed on the source object.
- * @param {*} value The new value.
- * @return {Object} A new obejct with properties updated.
+ * @param {Object} source 待更新的对象
+ * @param {string?|Array.<string>} path 属性的路径，如果更新二层以上的属性则需要提供一个字符串数组，
+ *     如果该参数为`undefined`或`null`，则会直接对`source`对象进行更新操作
+ * @param {*} value 用于更新的值
+ * @return {Object} 更新后的新对象
  */
 export function push(source, path, value) {
     return update(source, buildPathObject(path, {$push: value}));
 }
 
 /**
- * A shortcut function for `$unshift` command.
+ * 针对`$unshift`指令的快捷函数
  *
- * @param {Object} source The source object.
- * @param {string?|Array.<string>} path The path of a property, use array for nested property path,
- *     if this parameter is not not `undefined` or `null`, the command will be performed on the source object.
- * @param {*} value The new value.
- * @return {Object} A new obejct with properties updated.
+ * @param {Object} source 待更新的对象
+ * @param {string?|Array.<string>} path 属性的路径，如果更新二层以上的属性则需要提供一个字符串数组，
+ *     如果该参数为`undefined`或`null`，则会直接对`source`对象进行更新操作
+ * @param {*} value 用于更新的值
+ * @return {Object} 更新后的新对象
  */
 export function unshift(source, path, value) {
     return update(source, buildPathObject(path, {$unshift: value}));
 }
 
 /**
- * A shortcut function for `$merge` command.
+ * 针对`$merge`指令的快捷函数
  *
- * @param {Object} source The source object.
- * @param {string?|Array.<string>} path The path of a property, use array for nested property path,
- *     if this parameter is not not `undefined` or `null`, the command will be performed on the source object.
- * @param {*} value The new value.
- * @return {Object} A new obejct with properties updated.
+ * @param {Object} source 待更新的对象
+ * @param {string?|Array.<string>} path 属性的路径，如果更新二层以上的属性则需要提供一个字符串数组，
+ *     如果该参数为`undefined`或`null`，则会直接对`source`对象进行更新操作
+ * @param {*} value 用于更新的值
+ * @return {Object} 更新后的新对象
  */
 export function merge(source, path, value) {
     return update(source, buildPathObject(path, {$merge: value}));
 }
 
 /**
- * A shortcut function for `$defaults` command.
+ * 针对`$defaults`指令的快捷函数
  *
- * @param {Object} source The source object.
- * @param {string?|Array.<string>} path The path of a property, use array for nested property path,
- *     if this parameter is not not `undefined` or `null`, the command will be performed on the source object.
- * @param {*} value The new value.
- * @return {Object} A new obejct with properties updated.
+ * @param {Object} source 待更新的对象
+ * @param {string?|Array.<string>} path 属性的路径，如果更新二层以上的属性则需要提供一个字符串数组，
+ *     如果该参数为`undefined`或`null`，则会直接对`source`对象进行更新操作
+ * @param {*} value 用于更新的值
+ * @return {Object} 更新后的新对象
  */
 export function defaults(source, path, value) {
     return update(source, buildPathObject(path, {$defaults: value}));
 }
 
 /**
- * A shortcut function for `$invoke` command.
+ * 针对`$invoke`指令的快捷函数
  *
- * @param {Object} source The source object.
- * @param {string?|Array.<string>} path The path of a property, use array for nested property path,
- *     if this parameter is not not `undefined` or `null`, the command will be performed on the source object.
- * @param {Function} factory The factory function.
- * @return {Object} A new obejct with properties updated.
+ * @param {Object} source 待更新的对象
+ * @param {string?|Array.<string>} path 属性的路径，如果更新二层以上的属性则需要提供一个字符串数组，
+ *     如果该参数为`undefined`或`null`，则会直接对`source`对象进行更新操作
+ * @param {Function} factory 用于生成新值的工厂函数
+ * @return {Object} 更新后的新对象
  */
 export function invoke(source, path, factory) {
     return update(source, buildPathObject(path, {$invoke: factory}));

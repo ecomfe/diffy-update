@@ -1,13 +1,78 @@
 # diffy-update
 
-Scripts to update object or array with a diff output
+本库实现了一个更新对象的函数，同时随更新过程输出新旧对象的差异结构
 
-Different from other object-update libraries, this module provides an extra `diff` object so that you can check which properties are modified and how they are modified later.
+## 为何要开发这个库
 
-The `diff` object is only provided via the `withDiff` method:
+在当前的前端形势下，不可变（Immutable）的概念开始出现在开发者的视野中，以不可变作为第一考虑的设计和实现会让程序普遍拥有更好的可维护性
+
+而在不可变的前提下，我们不能对一个对象的属性进行直接的操作（赋值、修改、删除等），因此更新一个对象变得复杂：
 
 ```javascript
-import withDiff from 'diffy-update';
+let newObject = clone(source);
+newObject.foo = 1;
+```
+
+如果我们需要修改更深层次的属性，则会变得更为复杂：
+
+```javascript
+let newObject = clone(source);
+newObject.foo = clone(newObject.foo);
+newObject.foo.bar = 1;
+// 有其它属性都需要依次操作
+```
+
+这是相当麻烦的，每次更新都会需要大量的代码，因此偷懒的话我们会用深克隆来搞定这事：
+
+```javascript
+let newObject = deepClone(source);
+newObject.foo.bar = 1;
+// 其它修改
+```
+
+但是深克隆存在一些严重的问题：
+
+1. 性能不好，我们只更新一层属性的情况下，原对象的n层属性都要经过克隆操作，有大量无谓的遍历和对象创建开销
+2. 遇到环引用无法处理
+
+
+基于此，社区上出现了一些用声明式的指令更新对象的辅助库，比如[React Immutability Helpers](https://facebook.github.io/react/docs/update.html)，这些库封装了上面的逻辑，且选择了效率最优（仅复制未更新的属性，不需要深克隆）的方案
+
+但是随之而来的一个问题是，当我们更新完一个对象，如何知道更新了什么？如果我们所有的针对更新的操作都在更新后立即进行，那么在编码时我们可以人为地基于更新指令进行：
+
+```javascript
+let newObject = update(source, {foo: {$set: 1}});
+view.globalDatasource = newObject;
+view.updateUserInterfaceOfFoo();
+```
+
+但现实中几乎不可能存在如此理想的场景，更多的时候我们仅仅拿到一个未知来源的`newObject`。如果根据`newObject`强制进行界面的完全刷新，自然会导致性能的损失。我们更希望找到对象更新前后的差异，可以针对性地进行后续的操作，因此就会引入`diff`这一概念，比如使用[flibit/diff](https://github.com/flitbit/diff)：
+
+```javascript
+let differences = diff(oldObject, newObject);
+for (let node of differences) {
+    this.updateForPath(node.path, node.rhs);
+}
+```
+
+但是值得注意的是，差异分析本身是一个基于两个对象的深度遍历的操作，它是耗时的，在一个系统中引入这样一个环节必然会损失掉一定的性能
+
+基于以上的原因，我们更希望有这样的一个库，它可以提供基本的对象更新的功能，且在更新的同时实时计算出对象前后的差异。因为更新的过程中知道更新的指令，所以可以在没有额外的遍历损耗的情况下直接得到差异，`diffy-update`库正是以此为目标而诞生的
+
+## 使用
+
+### 前置环境
+
+`diffy-update`完全由ES2015+编写，如果环境无法满足要求，则在使用前需要添加对应的`polyfill`或`shim`，并使用[babel](http://babeljs.io)进行编译，全局至少要包含`Object.entries`函数的实现
+
+针对`babel`除[es2015 preset](http://babeljs.io/docs/plugins/preset-es2015/)外，至少需要[function bind](http://babeljs.io/docs/plugins/transform-function-bind/)插件得以正常工作
+
+### 基本场景
+
+仅`withDiff`函数会提供差异对象：
+
+```javascript
+import {withDiff, isDiffNode} from 'diffy-update';
 
 let source = {
     name: {
@@ -25,11 +90,14 @@ console.log(target);
 //     }
 // }
 
+console.log(isDiffNode(diff.name.firstName));
+// true
+
 console.log(diff);
 // {
 //     name: {
 //         firstName: {
-//             $change: 'change',
+//             changeType: 'change',
 //             oldValue: 'Navy',
 //             newValue: 'Pretty'
 //         }
@@ -37,14 +105,26 @@ console.log(diff);
 // }
 ```
 
-Currently we only provide diffs for primitive values and objects, array diffing is not implement yet.
+当前版本仅实现了针对基本类型和对象的差异计算，针对数组的差异计算将在后续版本中提供
 
-The `diff` object is an object with the same structure of `source` argument, when a property is changed, assigned or removed, it will report a `DiffNode` object with 3 properties:
+差异对象的结构与输入的`source`对象相同，其中如果有一个属性有被修改，则该属性会变为一个“差异节点”，使用`isDiffNode`进行判断即可，如果一个属性为差异节点，则会仅包含以下属性：
 
-- `$change` property is used to determine wether a property is a common one or a `DiffNode`, it can be either `"add"`, `"remove"` or `"change"` according to the type of modification.
-- `oldValue` is the old value of property, when a property is newly assigned, `oldValue` should be `undefined`.
-- `newValue` is the new value of property, when a property is removed, `newValue` should be `undefined`.
+- `changeType`表示修改的类型，值为`"add"`、`"remove"`或者`"change"`
+- `oldValue`表示修改前的值，如果`changeType`为`"add"`则值恒定为`undefined`
+- `newValue`表示修改后的值，如果`changeType`为`"remove"`则值恒定为`undefined`
 
-The default export of `update` module is a function behaves the same as `withDiff` function but removes the `diff` object from return value.
+### 快捷方式
 
-`diffy-update` also provieds short functions such as `set`, `push`, `unshift`, `merge`, `defaults` to quckly modify a specific property, use `npm run doc` to generate API docs, then open `doc/api/index.html` for defaults.
+`update`模块的默认导出是`withDiff`函数的快捷方式，仅返回更新后的对象，不提供差异对象，可用于函数内部更新对象等常用场景
+
+除此之外，本库还提供了一系列快捷函数，如`set`、`push`、`unshift`、`merge`、`defaults`等，这些函数可用于快速更新对象的某个属性，可以通过API文档进行查阅
+
+
+## API文档
+
+
+```shell
+npm i
+npm run doc
+open doc/api/index.html
+```
