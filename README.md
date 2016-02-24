@@ -128,3 +128,10 @@ npm i
 npm run doc
 open doc/api/index.html
 ```
+
+## 更新历史
+
+### 2.0.0
+
+- 差异节点中的`$change`属性改名为`changeType`，现在应该使用`isDiffNode`函数判断一个对象是否为差异节点
+- 文档更新为简体中文
