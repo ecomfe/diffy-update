@@ -1,6 +1,6 @@
 {
   "name": "diffy-update",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Scripts to update object or array with a diff output",
   "main": "src/update.js",
   "scripts": {
