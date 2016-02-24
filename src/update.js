@@ -6,8 +6,6 @@
  * @author otakustay
  */
 
-'use strict';
-
 let clone = target => Object.entries(target).reduce(
     (result, [key, value]) => {
         result[key] = value;
