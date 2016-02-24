@@ -34,6 +34,8 @@ let pick = (target, keys) => keys.reduce(
     {}
 );
 
+const IS_DIFF_NODE = Symbol('isDiffNode');
+
 const AVAILABLE_COMMANDS = {
     $set(container, propertyName, newValue) {
         let oldValue = container[propertyName];
@@ -43,7 +45,8 @@ const AVAILABLE_COMMANDS = {
         return [
             newValue,
             {
-                $change: container.hasOwnProperty(propertyName) ? 'change' : 'add',
+                [IS_DIFF_NODE]: true,
+                changeType: container.hasOwnProperty(propertyName) ? 'change' : 'add',
                 oldValue: oldValue,
                 newValue: newValue
             }
@@ -57,7 +60,8 @@ const AVAILABLE_COMMANDS = {
         return [
             result,
             {
-                $change: 'change',
+                [IS_DIFF_NODE]: true,
+                changeType: 'change',
                 oldValue: array,
                 newValue: result
             }
@@ -71,7 +75,8 @@ const AVAILABLE_COMMANDS = {
         return [
             result,
             {
-                $change: 'change',
+                [IS_DIFF_NODE]: true,
+                changeType: 'change',
                 oldValue: array,
                 newValue: result
             }
@@ -85,7 +90,8 @@ const AVAILABLE_COMMANDS = {
             return [
                 newValue,
                 {
-                    $change: container.hasOwnProperty(propertyName) ? 'change' : 'add',
+                    [IS_DIFF_NODE]: true,
+                    changeType: container.hasOwnProperty(propertyName) ? 'change' : 'add',
                     oldValue: target,
                     newValue: newValue
                 }
@@ -119,6 +125,22 @@ const AVAILABLE_COMMANDS = {
         return AVAILABLE_COMMANDS.$set(container, propertyName, newValue);
     }
 };
+
+/**
+ * 判断一个对象是否为diff节点
+ *
+ * 如果一个对象为diff节点，那么它有且仅有以下属性：
+ *
+ * - `changeType`表示修改的类型，值为`"add"`、`"remove"`或者`"change"`
+ * - `oldValue`表示修改前的值，如果`changeType`为`"add"`则值恒定为`undefined`
+ * - `newValue`表示修改后的值，如果`changeType`为`"remove"`则值恒定为`undefined`
+ *
+ * @param {*} node 用于判断的节点
+ * @return {boolean}
+ */
+export function isDiffNode(node) {
+    return node.hasOwnProperty(IS_DIFF_NODE);
+}
 
 /**
  * Update an object following given command, return a new obejct
@@ -155,7 +177,7 @@ const AVAILABLE_COMMANDS = {
  * {
  *     foo: {
  *         bar: {
- *             $change: 'add' // can be "add", "change" or "remove",
+ *             changeType: 'add' // can be "add", "change" or "remove",
  *             oldValue: [1, 2, 3],
  *             newValue: [2, 3, 4]
  *         }
@@ -164,7 +186,7 @@ const AVAILABLE_COMMANDS = {
  * ```
  *
  * We can use a simple object iteration over this object to find a minumum difference between 2 objects,
- * all leaves of `diff` object contains a `$change` property which indicates the change type of this property.
+ * all leaves of `diff` object contains a `changeType` property which indicates the change type of this property.
  *
  * @param {Object} source The source obejct.
  * @param {Object} commands The update command.

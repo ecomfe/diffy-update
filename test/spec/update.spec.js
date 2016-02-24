@@ -1,6 +1,6 @@
 'use strict';
 
-import {default as update, withDiff, set, push, unshift, merge, defaults, invoke} from 'update';
+import {default as update, withDiff, set, push, unshift, merge, defaults, invoke, isDiffNode} from 'update';
 
 function createSourceObject() {
     return {
@@ -23,9 +23,10 @@ describe('withDiff method', () => {
         let source = createSourceObject();
         let [result, diff] = withDiff(source, {alice: {$set: 2}});
         expect(result.alice).toBe(2);
+        expect(isDiffNode(diff.alice)).toBe(true);
         expect(diff).toEqual({
             alice: {
-                $change: 'change',
+                changeType: 'change',
                 oldValue: 1,
                 newValue: 2
             }
@@ -39,10 +40,11 @@ describe('withDiff method', () => {
         let source = createSourceObject();
         let [result, diff] = withDiff(source, {tom: {jack: {$set: 2}}});
         expect(result.tom.jack).toBe(2);
+        expect(isDiffNode(diff.tom.jack)).toBe(true);
         expect(diff).toEqual({
             tom: {
                 jack: {
-                    $change: 'change',
+                    changeType: 'change',
                     oldValue: 1,
                     newValue: 2
                 }
@@ -57,10 +59,11 @@ describe('withDiff method', () => {
         let source = createSourceObject();
         let [result, diff] = withDiff(source, {a: {b: {$set: 2}}});
         expect(result.a.b).toBe(2);
+        expect(isDiffNode(diff.a.b)).toBe(true);
         expect(diff).toEqual({
             a: {
                 b: {
-                    $change: 'add',
+                    changeType: 'add',
                     oldValue: undefined,
                     newValue: 2
                 }
@@ -75,11 +78,12 @@ describe('withDiff method', () => {
         let source = createSourceObject();
         let [result, diff] = withDiff(source, {x: {y: {z: {$push: 4}}}});
         expect(result.x.y.z).toEqual([1, 2, 3, 4]);
+        expect(isDiffNode(diff.x.y.z)).toBe(true);
         expect(diff).toEqual({
             x: {
                 y: {
                     z: {
-                        $change: 'change',
+                        changeType: 'change',
                         oldValue: [1, 2, 3],
                         newValue: [1, 2, 3, 4]
                     }
@@ -95,11 +99,12 @@ describe('withDiff method', () => {
         let source = createSourceObject();
         let [result, diff] = withDiff(source, {x: {y: {z: {$unshift: 0}}}});
         expect(result.x.y.z).toEqual([0, 1, 2, 3]);
+        expect(isDiffNode(diff.x.y.z)).toBe(true);
         expect(diff).toEqual({
             x: {
                 y: {
                     z: {
-                        $change: 'change',
+                        changeType: 'change',
                         oldValue: [1, 2, 3],
                         newValue: [0, 1, 2, 3]
                     }
@@ -115,16 +120,18 @@ describe('withDiff method', () => {
         let source = createSourceObject();
         let [result, diff] = withDiff(source, {x: {y: {$merge: {a: 1, b: 2, z: source.x.y.z}}}});
         expect(result.x.y).toEqual({a: 1, b: 2, z: [1, 2, 3]});
+        expect(isDiffNode(diff.x.y.a)).toBe(true);
+        expect(isDiffNode(diff.x.y.b)).toBe(true);
         expect(diff).toEqual({
             x: {
                 y: {
                     a: {
-                        $change: 'add',
+                        changeType: 'add',
                         oldValue: undefined,
                         newValue: 1
                     },
                     b: {
-                        $change: 'add',
+                        changeType: 'add',
                         oldValue: undefined,
                         newValue: 2
                     }
@@ -139,16 +146,18 @@ describe('withDiff method', () => {
         let source = createSourceObject();
         let [result, diff] = withDiff(source, {x: {y: {$defaults: {a: 1, b: 2, z: 3}}}});
         expect(result.x.y).toEqual({a: 1, b: 2, z: [1, 2, 3]});
+        expect(isDiffNode(diff.x.y.a)).toBe(true);
+        expect(isDiffNode(diff.x.y.b)).toBe(true);
         expect(diff).toEqual({
             x: {
                 y: {
                     a: {
-                        $change: 'add',
+                        changeType: 'add',
                         oldValue: undefined,
                         newValue: 1
                     },
                     b: {
-                        $change: 'add',
+                        changeType: 'add',
                         oldValue: undefined,
                         newValue: 2
                     }
@@ -163,10 +172,11 @@ describe('withDiff method', () => {
         let source = createSourceObject();
         let [result, diff] = withDiff(source, {tom: {jack: {$invoke(x) { return x * 2; }}}});
         expect(result.tom.jack).toBe(2);
+        expect(isDiffNode(diff.tom.jack)).toBe(true);
         expect(diff).toEqual({
             tom: {
                 jack: {
-                    $change: 'change',
+                    changeType: 'change',
                     oldValue: 1,
                     newValue: 2
                 }
@@ -228,8 +238,9 @@ describe('withDiff method', () => {
             let source = {};
             let [result, diff] = withDiff(source, {$set: 1});
             expect(result).toBe(1);
+            expect(isDiffNode(diff)).toBe(true);
             expect(diff).toEqual({
-                $change: 'change',
+                changeType: 'change',
                 oldValue: source,
                 newValue: result
             });
@@ -240,8 +251,9 @@ describe('withDiff method', () => {
             let source = [1, 2, 3];
             let [result, diff] = withDiff(source, {$push: 4});
             expect(result).toEqual([1, 2, 3, 4]);
+            expect(isDiffNode(diff)).toBe(true);
             expect(diff).toEqual({
-                $change: 'change',
+                changeType: 'change',
                 oldValue: source,
                 newValue: result
             });
@@ -252,8 +264,9 @@ describe('withDiff method', () => {
             let source = [1, 2, 3];
             let [result, diff] = withDiff(source, {$unshift: 0});
             expect(result).toEqual([0, 1, 2, 3]);
+            expect(isDiffNode(diff)).toBe(true);
             expect(diff).toEqual({
-                $change: 'change',
+                changeType: 'change',
                 oldValue: source,
                 newValue: result
             });
@@ -264,14 +277,16 @@ describe('withDiff method', () => {
             let source = {foo: 1};
             let [result, diff] = withDiff(source, {$merge: {foo: 3, bar: 2}});
             expect(result).toEqual({foo: 3, bar: 2});
+            expect(isDiffNode(diff.foo)).toBe(true);
+            expect(isDiffNode(diff.bar)).toBe(true);
             expect(diff).toEqual({
                 foo: {
-                    $change: 'change',
+                    changeType: 'change',
                     oldValue: 1,
                     newValue: 3
                 },
                 bar: {
-                    $change: 'add',
+                    changeType: 'add',
                     oldValue: undefined,
                     newValue: 2
                 }
@@ -283,9 +298,10 @@ describe('withDiff method', () => {
             let source = {foo: 1};
             let [result, diff] = withDiff(source, {$defaults: {foo: 2, bar: 2}});
             expect(result).toEqual({foo: 1, bar: 2});
+            expect(isDiffNode(diff.bar)).toBe(true);
             expect(diff).toEqual({
                 bar: {
-                    $change: 'add',
+                    changeType: 'add',
                     oldValue: undefined,
                     newValue: 2
                 }
@@ -298,8 +314,9 @@ describe('withDiff method', () => {
             let source = 1;
             let [result, diff] = withDiff(source, {$invoke(x) { return x * 2; }});
             expect(result).toEqual(2);
+            expect(isDiffNode(diff)).toBe(true);
             expect(diff).toEqual({
-                $change: 'change',
+                changeType: 'change',
                 oldValue: source,
                 newValue: result
             });
