@@ -187,8 +187,8 @@ export function isDiffNode(node) {
  *
  * **需注意的是当前版本并未实现数组类型的差异描述**
  *
- * @param {Object} 待更新的对象
- * @param {Object} 用于更新的指令
+ * @param {Object} source 待更新的对象
+ * @param {Object} commands 用于更新的指令
  * @return {Array} 函数返回一个数组，结构为`[newObject, diff]`，其中
  *     `newObject`为更新后的对象，`diff`为更新前后的差异,
  *     `diff` is a diff object between the original object and the modified one.
@@ -261,8 +261,8 @@ function buildPathObject(path, value) {
 /**
  * 效果等同于`withDiff`函数，但不返回差异对象
  *
- * @param {Object} 待更新的对象
- * @param {Object} 用于更新的指令
+ * @param {Object} source 待更新的对象
+ * @param {Object} commands 用于更新的指令
  * @return {Object} 更新后的新对象
  */
 export default function update(source, commands) {
