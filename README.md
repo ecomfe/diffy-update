@@ -119,6 +119,98 @@ console.log(diff);
 
 除此之外，本库还提供了一系列快捷函数，如`set`、`push`、`unshift`、`merge`、`defaults`等，这些函数可用于快速更新对象的某个属性，可以通过API文档进行查阅
 
+### 差异合并
+
+在一个完整的应用模型中，如果每一次对数据的操作都映射为后续的操作（如UI更新），则可能出现一些不可预期的问题：
+
+- 可能因为频繁的UI更新导致性能的问题
+- 如果存在一些循环的变化，则可能进入死循环
+
+所以在成熟的应用中，我们通常会在进行若干次数据变化后，根据整体的变化来进行后续的逻辑，这就要求每次变化产生的差异可以相互合并，生成一个最终的差异以供后续使用
+
+`diffy-update`库提供了`merge`模块来支持差异的合并，我们可以使用`mergeDiff`函数将多次`withDiff`生成的差异进行合并：
+
+```javascript
+import {withDiff} from 'diffy-update/update';
+import {mergeDiff} from 'diffy-upadte/merge';
+
+let source = {
+    age: 21,
+    name: {
+        firstName: 'Gray',
+        lastName: 'Zhang'
+    }
+};
+let [ageUpdated, diffOnAge] = withDiff(source, {age: {$set: 22}});
+let [nameUpdated, diffOnName] = withDiff(ageUpdated, {name: {firstName: {$set: 'Pretty'}}});
+
+console.log(nameUpdated);
+// {
+//     age: 22,
+//     name: {
+//         firstName: 'Pretty',
+//         lastName: 'Zhang'
+//     }
+// }
+
+console.log(diffOnAge);
+// {
+//     age: {
+//         changeType: 'change',
+//         oldValue: 21,
+//         newValue: 22
+//     }
+// }
+
+console.log(diffOnName);
+// {
+//     name: {
+//         firstName: {
+//             changeType: 'change',
+//             oldValue: 'Gray',
+//             newValue: 'Pretty'
+//         }
+//     }
+// }
+
+// 注意要提供最先和最后的对象，即`source`和`nameUpdated`，中间过程产生的`ageUpdated`没用
+let totalDiff = mergeDiff(diffOnAge, diffOnName, source, nameUpdated);
+console.log(totalDiff);
+// {
+//     age: {
+//         changeType: 'change',
+//         oldValue: 21,
+//         newValue: 22
+//     },
+//     name: {
+//         firstName: {
+//             changeType: 'change',
+//             oldValue: 'Gray',
+//             newValue: 'Pretty'
+//         }
+//     }
+// }
+```
+
+差异的合并是智能的，它包括：
+
+- 同一个属性发生多次变化，则会合并成一个，根据变化的类型生成新的变化，如`"add"`后再进行`"change"`则会合并为一个`"add"`
+- 如果变化导致最终属性值前后相同，则该差异会被丢弃，如先`"add"`后`"remove"`，或者多次`"change"`导致最终值并没有变化
+- 一个属性变化后，其子属性再变化，或者反之，也同样会进行合并，如`foo.bar`变化后再修改`foo`，则会变成`foo`的整体变化
+
+需要注意的是，差异合并本身是一个消耗资源的计算工作（虽然很快），因此在实现上并不追求输出最小的差异集，而是在性能和正确性之间取得一个折衷，在可接受的速度之下输出相对优化后的差异结果
+
+## 应用场景
+
+在使用`diffy-update`后，我们可以制作一个非常简易的UI-数据绑定模型，其基本逻辑为：
+
+1. 在UI中可以声明某一区块与数据对象中某个属性的绑定关系
+2. 打开一个异步操作，使用`setImmediate`等函数完成
+3. 允许用户通过`withDiff`方法更新数据，同时记录最初的数据对象、每一次的差异以及更新后的新数据对象
+4. 在异步回调后，将收集的差异，配合原数据对象、新数据对象，使用`mergeDiff`生成最终的差异对象
+5. 通过遍历差异对象，仅更新UI中绑定了产生变化的属性部分
+
+当然一个完整的模型需要更多的细节考虑，但大致思路如上所示，`diffy-update`在这一模型中作为底层的工具库，可以提供非常大的帮助
 
 ## API文档
 
@@ -135,3 +227,8 @@ open doc/api/index.html
 
 - 差异节点中的`$change`属性改名为`changeType`，现在应该使用`isDiffNode`函数判断一个对象是否为差异节点
 - 文档更新为简体中文
+
+### 2.1.0
+
+- `update`模块下的`isDiffNode`函数已标记为废弃，请使用`diffNode`模块下的该函数
+- 增加了差异合并的相关函数

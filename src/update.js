@@ -6,6 +6,23 @@
  * @author otakustay
  */
 
+import {createDiffNode} from './diffNode';
+
+/**
+ * 判断一个对象是否为差异节点
+ *
+ * 如果一个对象为差异节点，那么它有且仅有以下属性：
+ *
+ * - `changeType`表示修改的类型，值为`"add"`、`"remove"`或者`"change"`
+ * - `oldValue`表示修改前的值，如果`changeType`为`"add"`则值恒定为`undefined`
+ * - `newValue`表示修改后的值，如果`changeType`为`"remove"`则值恒定为`undefined`
+ *
+ * @param {*} node 用于判断的节点
+ * @return {boolean}
+ * @deprecated 请使用`diffNode.isDiffNode`代替
+ */
+export {isDiffNode} from './diffNode';
+
 let clone = target => Object.entries(target).reduce(
     (result, [key, value]) => {
         result[key] = value;
@@ -32,8 +49,6 @@ let pick = (target, keys) => keys.reduce(
     {}
 );
 
-const IS_DIFF_NODE = Symbol('isDiffNode');
-
 const AVAILABLE_COMMANDS = {
     $set(container, propertyName, newValue) {
         let oldValue = container[propertyName];
@@ -42,12 +57,7 @@ const AVAILABLE_COMMANDS = {
         }
         return [
             newValue,
-            {
-                [IS_DIFF_NODE]: true,
-                changeType: container.hasOwnProperty(propertyName) ? 'change' : 'add',
-                oldValue: oldValue,
-                newValue: newValue
-            }
+            createDiffNode(container.hasOwnProperty(propertyName) ? 'change' : 'add', oldValue, newValue)
         ];
     },
 
@@ -57,12 +67,7 @@ const AVAILABLE_COMMANDS = {
         result.push(newValue);
         return [
             result,
-            {
-                [IS_DIFF_NODE]: true,
-                changeType: 'change',
-                oldValue: array,
-                newValue: result
-            }
+            createDiffNode('change', array, result)
         ];
     },
 
@@ -72,12 +77,7 @@ const AVAILABLE_COMMANDS = {
         result.unshift(newValue);
         return [
             result,
-            {
-                [IS_DIFF_NODE]: true,
-                changeType: 'change',
-                oldValue: array,
-                newValue: result
-            }
+            createDiffNode('change', array, result)
         ];
     },
 
@@ -87,12 +87,7 @@ const AVAILABLE_COMMANDS = {
             let newValue = clone(extensions);
             return [
                 newValue,
-                {
-                    [IS_DIFF_NODE]: true,
-                    changeType: container.hasOwnProperty(propertyName) ? 'change' : 'add',
-                    oldValue: target,
-                    newValue: newValue
-                }
+                createDiffNode(container.hasOwnProperty(propertyName) ? 'change' : 'add', target, newValue)
             ];
         }
 
@@ -123,22 +118,6 @@ const AVAILABLE_COMMANDS = {
         return AVAILABLE_COMMANDS.$set(container, propertyName, newValue);
     }
 };
-
-/**
- * 判断一个对象是否为差异节点
- *
- * 如果一个对象为差异节点，那么它有且仅有以下属性：
- *
- * - `changeType`表示修改的类型，值为`"add"`、`"remove"`或者`"change"`
- * - `oldValue`表示修改前的值，如果`changeType`为`"add"`则值恒定为`undefined`
- * - `newValue`表示修改后的值，如果`changeType`为`"remove"`则值恒定为`undefined`
- *
- * @param {*} node 用于判断的节点
- * @return {boolean}
- */
-export function isDiffNode(node) {
-    return node.hasOwnProperty(IS_DIFF_NODE);
-}
 
 /**
  * 根据提供的指令更新一个对象，返回更新后的新对象以及新旧对象的差异（diff），原对象不会作任何的修改

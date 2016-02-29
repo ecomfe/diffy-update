@@ -1,6 +1,5 @@
-'use strict';
-
-import {default as update, withDiff, set, push, unshift, merge, defaults, invoke, isDiffNode} from 'update';
+import {default as update, withDiff, set, push, unshift, merge, defaults, invoke} from 'update';
+import {isDiffNode} from 'diffNode';
 
 function createSourceObject() {
     return {
