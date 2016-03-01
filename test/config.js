@@ -5,15 +5,8 @@ module.exports = {
     // base path, that will be used to resolve files and exclude
     basePath: '../',
 
-
-    templates: {
-        context: 'context.html',
-        debug: 'debug.html'
-    },
-
-
     // frameworks to use
-    frameworks: ['jasmine2', 'esl'],
+    frameworks: ['jasmine2.3.4', 'esl', './test/babel-support.js'],
 
 
     // list of files / patterns to load in the browser
@@ -22,18 +15,15 @@ module.exports = {
     ],
 
 
-    // list of files to exclude
-    exclude: [
-
-    ],
-
-
     // optionally, configure the reporter
     coverageReporter: {
         // text-summary | text | html | json | teamcity | cobertura | lcov
         // lcovonly | none | teamcity
-        type : 'none',
-        dir : 'test/coverage/'
+        type : 'text|html',
+        dir : 'test/coverage/',
+        exclude: [
+            '*.spec.js'
+        ]
     },
 
     // web server port
@@ -57,5 +47,5 @@ module.exports = {
 
     // Continuous Integration mode
     // if true, it capture browsers, run tests and exit
-    singleRun: false
+    singleRun: true
 };
