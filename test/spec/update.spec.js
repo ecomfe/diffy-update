@@ -1,4 +1,4 @@
-import {default as update, withDiff, set, push, unshift, merge, defaults, invoke} from 'update';
+import {default as update, withDiff, set, push, unshift, merge, defaults, invoke, isDiffNode as isDiffNodeFromUpdate} from 'update';
 import {isDiffNode} from 'diffNode';
 
 function createSourceObject() {
@@ -141,6 +141,14 @@ describe('withDiff method', () => {
         expect(source).toEqual(createSourceObject());
     });
 
+    it('should accept merge command on null objects', () => {
+        let source = {x: {a: 1}};
+        let extension = {b: 2};
+        let [result, diff] = withDiff(source, {y: {$merge: extension}});
+        expect(result).toEqual({x: {a: 1}, y: {b: 2}});
+        expect(result.y).not.toBe(extension);
+    })
+
     it('should recognize defaults command', () => {
         let source = createSourceObject();
         let [result, diff] = withDiff(source, {x: {y: {$defaults: {a: 1, b: 2, z: 3}}}});
@@ -191,6 +199,12 @@ describe('withDiff method', () => {
         expect(source).toEqual(createSourceObject());
         result.tom.jack = 1;
         expect(result).toEqual(source);
+    });
+
+    it('should accept string as property path', () => {
+        let source = {x: 1};
+        let result = set(source, 'x', 2);
+        expect(result).toEqual({x: 2});
     });
 
     it('should expose push function', () => {
@@ -383,6 +397,12 @@ describe('withDiff method', () => {
             let result = invoke(source, null, (x) => x * 2);
             expect(result).toEqual(2);
             expect(source).toEqual(1);
+        });
+    });
+
+    describe('isDiffNode function', () => {
+        it('should be exported', () => {
+            expect(typeof isDiffNodeFromUpdate).toBe('function');
         });
     });
 });
