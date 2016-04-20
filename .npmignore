@@ -1,0 +1,7 @@
+test/
+doc/
+.edpproj/
+.babelrc
+esdoc.json
+module.conf
+edp-webserver-config.js
