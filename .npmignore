@@ -2,6 +2,7 @@ test/
 doc/
 .edpproj/
 .babelrc
+.fecsrc
 esdoc.json
 module.conf
 edp-webserver-config.js
