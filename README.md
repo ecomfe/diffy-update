@@ -232,3 +232,7 @@ open doc/api/index.html
 
 - `update`模块下的`isDiffNode`函数已标记为废弃，请使用`diffNode`模块下的该函数
 - 增加了差异合并的相关函数
+
+### 2.2.0
+
+- 针对发布到npm的版本增加了编译后的`dist`目录，可以直接使用
