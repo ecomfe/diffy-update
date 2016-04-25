@@ -4,7 +4,7 @@
   "description": "Scripts to update object or array with a diff output",
   "main": "dist/update.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "edp test start --singleRun",
     "doc": "esdoc -c esdoc.json",
     "compile": "babel -d dist/ src/",
     "prepublish": "npm run compile"
