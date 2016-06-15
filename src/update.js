@@ -119,6 +119,9 @@ const AVAILABLE_COMMANDS = {
     }
 };
 
+const AVAILABLE_COMMAND_KEYS = Object.keys(AVAILABLE_COMMANDS);
+const AVAILABLE_COMMAND_ENTRIES = Object.entries(AVAILABLE_COMMANDS);
+
 /**
  * 根据提供的指令更新一个对象，返回更新后的新对象以及新旧对象的差异（diff），原对象不会作任何的修改
  *
@@ -172,7 +175,7 @@ const AVAILABLE_COMMANDS = {
  */
 export function withDiff(source, commands) {
     // 如果根节点就是个指令，那么直接对输入的对象进行操作，不需要再遍历属性了
-    let possibleRootCommand = Object.keys(AVAILABLE_COMMANDS).find(key => commands.hasOwnProperty(key));
+    let possibleRootCommand = AVAILABLE_COMMAND_KEYS.find(key => commands.hasOwnProperty(key));
     if (possibleRootCommand) {
         let wrapper = {source};
         let commandValue = commands[possibleRootCommand];
@@ -196,7 +199,7 @@ export function withDiff(source, commands) {
                 }
                 return false;
             };
-            let isCommand = Object.entries(AVAILABLE_COMMANDS).some(tryExecuteCommand);
+            let isCommand = AVAILABLE_COMMAND_ENTRIES.some(tryExecuteCommand);
             // 如果这个节点不代表指令，那么肯定它的某个属性（或子属性）是指令，继续递归往下找
             if (!isCommand) {
                 let [newValue, propertyDiff] = withDiff(result[key] || {}, propertyCommand);
