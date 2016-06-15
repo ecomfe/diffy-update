@@ -172,7 +172,7 @@ const AVAILABLE_COMMANDS = {
  */
 export function withDiff(source, commands) {
     // 如果根节点就是个指令，那么直接对输入的对象进行操作，不需要再遍历属性了
-    let possibleRootCommand = Object.keys(AVAILABLE_COMMANDS).filter(::commands.hasOwnProperty)[0];
+    let possibleRootCommand = Object.keys(AVAILABLE_COMMANDS).find(key => commands.hasOwnProperty(key));
     if (possibleRootCommand) {
         let wrapper = {source};
         let commandValue = commands[possibleRootCommand];
