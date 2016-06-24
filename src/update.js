@@ -23,13 +23,19 @@ import {createDiffNode} from './diffNode';
  */
 export {isDiffNode} from './diffNode';
 
-let clone = target => Object.entries(target).reduce(
-    (result, [key, value]) => {
-        result[key] = value;
-        return result;
-    },
-    {}
-);
+let clone = target => {
+    if (Array.isArray(target)) {
+        return Array.from(target);
+    }
+
+    return Object.entries(target).reduce(
+        (result, [key, value]) => {
+            result[key] = value;
+            return result;
+        },
+        {}
+    );
+};
 
 let isEmpty = target => {
     for (let key in target) {
