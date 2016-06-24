@@ -227,11 +227,11 @@ export function withDiff(source, commands) {
 }
 
 function buildPathObject(path, value) {
-    if (!path) {
+    if (path == null) {
         return value;
     }
 
-    if (typeof path === 'string') {
+    if (!Array.isArray(path)) {
         path = [path];
     }
 
