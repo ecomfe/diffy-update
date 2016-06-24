@@ -35,6 +35,25 @@ describe('withDiff method', () => {
         expect(result).toEqual(source);
     });
 
+    it('shoud update array by index', () => {
+        let source = createSourceObject();
+        let [result, diff] = withDiff(source, {foo: {2: {$set: 4}}});
+        expect(result.foo[2]).toBe(4);
+        expect(isDiffNode(diff.foo[2])).toBe(true);
+        expect(diff).toEqual({
+            foo: {
+                2: {
+                    changeType: 'change',
+                    oldValue: 3,
+                    newValue: 4
+                }
+            }
+        });
+        expect(source).toEqual(createSourceObject());
+        result.foo[2] = 3;
+        expect(result).toEqual(source);
+    });
+
     it('shoud update a nested property value', () => {
         let source = createSourceObject();
         let [result, diff] = withDiff(source, {tom: {jack: {$set: 2}}});
@@ -205,6 +224,12 @@ describe('withDiff method', () => {
         let source = {x: 1};
         let result = set(source, 'x', 2);
         expect(result).toEqual({x: 2});
+    });
+
+    it('should accept number as property path (especially 0)', () => {
+        let source = [1, 2, 3];
+        let result = set(source, 0, 4);
+        expect(result).toEqual([4, 2, 3]);
     });
 
     it('should expose push function', () => {

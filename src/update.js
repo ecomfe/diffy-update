@@ -259,7 +259,7 @@ export default function update(source, commands) {
  * 针对`$set`指令的快捷函数
  *
  * @param {Object} source 待更新的对象
- * @param {string?|Array.<string>} path 属性的路径，如果更新二层以上的属性则需要提供一个字符串数组，
+ * @param {string?|Array.<string>|number?|Array.<number>} path 属性的路径，如果更新二层以上的属性则需要提供一个字符串数组，
  *     如果该参数为`undefined`或`null`，则会直接对`source`对象进行更新操作
  * @param {*} value 用于更新的值
  * @return {Object} 更新后的新对象
@@ -272,7 +272,7 @@ export function set(source, path, value) {
  * 针对`$push`指令的快捷函数
  *
  * @param {Object} source 待更新的对象
- * @param {string?|Array.<string>} path 属性的路径，如果更新二层以上的属性则需要提供一个字符串数组，
+ * @param {string?|Array.<string>|number?|Array.<number>} path 属性的路径，如果更新二层以上的属性则需要提供一个字符串数组，
  *     如果该参数为`undefined`或`null`，则会直接对`source`对象进行更新操作
  * @param {*} value 用于更新的值
  * @return {Object} 更新后的新对象
@@ -285,7 +285,7 @@ export function push(source, path, value) {
  * 针对`$unshift`指令的快捷函数
  *
  * @param {Object} source 待更新的对象
- * @param {string?|Array.<string>} path 属性的路径，如果更新二层以上的属性则需要提供一个字符串数组，
+ * @param {string?|Array.<string>|number?|Array.<number>} path 属性的路径，如果更新二层以上的属性则需要提供一个字符串数组，
  *     如果该参数为`undefined`或`null`，则会直接对`source`对象进行更新操作
  * @param {*} value 用于更新的值
  * @return {Object} 更新后的新对象
@@ -298,7 +298,7 @@ export function unshift(source, path, value) {
  * 针对`$merge`指令的快捷函数
  *
  * @param {Object} source 待更新的对象
- * @param {string?|Array.<string>} path 属性的路径，如果更新二层以上的属性则需要提供一个字符串数组，
+ * @param {string?|Array.<string>|number?|Array.<number>} path 属性的路径，如果更新二层以上的属性则需要提供一个字符串数组，
  *     如果该参数为`undefined`或`null`，则会直接对`source`对象进行更新操作
  * @param {*} value 用于更新的值
  * @return {Object} 更新后的新对象
@@ -311,7 +311,7 @@ export function merge(source, path, value) {
  * 针对`$defaults`指令的快捷函数
  *
  * @param {Object} source 待更新的对象
- * @param {string?|Array.<string>} path 属性的路径，如果更新二层以上的属性则需要提供一个字符串数组，
+ * @param {string?|Array.<string>|number?|Array.<number>} path 属性的路径，如果更新二层以上的属性则需要提供一个字符串数组，
  *     如果该参数为`undefined`或`null`，则会直接对`source`对象进行更新操作
  * @param {*} value 用于更新的值
  * @return {Object} 更新后的新对象
@@ -324,7 +324,7 @@ export function defaults(source, path, value) {
  * 针对`$invoke`指令的快捷函数
  *
  * @param {Object} source 待更新的对象
- * @param {string?|Array.<string>} path 属性的路径，如果更新二层以上的属性则需要提供一个字符串数组，
+ * @param {string?|Array.<string>|number?|Array.<number>} path 属性的路径，如果更新二层以上的属性则需要提供一个字符串数组，
  *     如果该参数为`undefined`或`null`，则会直接对`source`对象进行更新操作
  * @param {Function} factory 用于生成新值的工厂函数
  * @return {Object} 更新后的新对象
