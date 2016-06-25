@@ -189,10 +189,8 @@ export function withDiff(source, commands) {
         return [newValue, diff];
     }
 
-    let diff = {};
-    let result = Object.keys(commands).reduce(
-        (result, key) => {
-            let propertyCommand = commands[key];
+    let [result, diff] = Object.entries(commands).reduce(
+        ([result, diff], [key, propertyCommand]) => {
             // 找到指令节点后，对当前属性进行更新
             let tryExecuteCommand = ([command, execute]) => {
                 if (propertyCommand.hasOwnProperty(command)) {
@@ -205,6 +203,7 @@ export function withDiff(source, commands) {
                 }
                 return false;
             };
+
             let isCommand = AVAILABLE_COMMAND_ENTRIES.some(tryExecuteCommand);
             // 如果这个节点不代表指令，那么肯定它的某个属性（或子属性）是指令，继续递归往下找
             if (!isCommand) {
@@ -215,9 +214,9 @@ export function withDiff(source, commands) {
                 }
             }
 
-            return result;
+            return [result, diff];
         },
-        clone(source)
+        [clone(source), {}]
     );
 
     if (isEmpty(diff)) {
