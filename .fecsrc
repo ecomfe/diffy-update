@@ -8,7 +8,8 @@
         },
         "rules": {
             "fecs-use-for-of": false,
-            "fecs-valid-map-set": false
+            "fecs-valid-map-set": false,
+            "no-console": false
         }
     }
 }

@@ -6,7 +6,7 @@
  * @author otakustay
  */
 
-import {createDiffNode} from './diffNode';
+import {createDiffNode, isDiffNode as isDiffNodeActual} from './diffNode';
 
 /**
  * 判断一个对象是否为差异节点
@@ -19,9 +19,13 @@ import {createDiffNode} from './diffNode';
  *
  * @param {*} node 用于判断的节点
  * @return {boolean}
- * @deprecated 请使用`diffNode.isDiffNode`代替
+ * @deprecated 请使用`diffNod©e.isDiffNode`代替
  */
-export {isDiffNode} from './diffNode';
+export function isDiffNode(node) {
+    console.warn('isDiffNode in update module is deprecated, use isDiffNode in diffNode module instead.');
+
+    return isDiffNodeActual(node);
+}
 
 let clone = target => {
     if (Array.isArray(target)) {
@@ -69,6 +73,11 @@ const AVAILABLE_COMMANDS = {
 
     $push(container, propertyName, newValue) {
         let array = container[propertyName];
+
+        if (!Array.isArray(array)) {
+            console.warn('Usage of $push command on non array object may produce unexpected result.');
+        }
+
         let result = array.slice();
         result.push(newValue);
         return [
@@ -79,6 +88,11 @@ const AVAILABLE_COMMANDS = {
 
     $unshift(container, propertyName, newValue) {
         let array = container[propertyName];
+
+        if (!Array.isArray(array)) {
+            console.warn('Usage of $unshift command on non array object may produce unexpected result.');
+        }
+
         let result = array.slice();
         result.unshift(newValue);
         return [
