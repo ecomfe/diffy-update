@@ -78,8 +78,7 @@ const AVAILABLE_COMMANDS = {
             console.warn('Usage of $push command on non array object may produce unexpected result.');
         }
 
-        let result = array.slice();
-        result.push(newValue);
+        let result = array.concat([newValue]);
         return [
             result,
             createDiffNode('change', array, result)
@@ -93,8 +92,7 @@ const AVAILABLE_COMMANDS = {
             console.warn('Usage of $unshift command on non array object may produce unexpected result.');
         }
 
-        let result = array.slice();
-        result.unshift(newValue);
+        let result = [newValue].concat(array);
         return [
             result,
             createDiffNode('change', array, result)
