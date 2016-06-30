@@ -2,11 +2,11 @@
   "name": "diffy-update",
   "version": "2.2.1",
   "description": "Scripts to update object or array with a diff output",
-  "main": "dist/update.js",
+  "main": "update.js",
   "scripts": {
     "test": "edp test start --singleRun",
     "doc": "esdoc -c esdoc.json",
-    "compile": "babel -d dist/ src/",
+    "compile": "babel -d . src/",
     "prepublish": "npm run compile"
   },
   "repository": {
