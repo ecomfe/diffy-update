@@ -32,13 +32,7 @@ let clone = target => {
         return Array.from(target);
     }
 
-    return Object.entries(target).reduce(
-        (result, [key, value]) => {
-            result[key] = value;
-            return result;
-        },
-        {}
-    );
+    return Object.assign({}, target);
 };
 
 let isEmpty = target => {
