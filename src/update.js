@@ -93,6 +93,20 @@ const AVAILABLE_COMMANDS = {
         ];
     },
 
+    $splice(container, propertyName, [start, deleteCount, ...items]) {
+        let array = container[propertyName];
+
+        if (!Array.isArray(array)) {
+            console.warn('Usage of $splice command on non array object may produce unexpected result.');
+        }
+
+        let result = array.slice(0, start).concat(items).concat(array.slice(start + deleteCount));
+        return [
+            result,
+            createDiffNode('change', array, result)
+        ];
+    },
+
     $merge(container, propertyName, extensions) {
         let target = container[propertyName];
         if (target == null) {
@@ -297,6 +311,21 @@ export function push(source, path, value) {
  */
 export function unshift(source, path, value) {
     return update(source, buildPathObject(path, {$unshift: value}));
+}
+
+/**
+ * 针对`$splice`指令的快捷函数
+ *
+ * @param {Object} source 待更新的对象
+ * @param {string?|Array.<string>|number?|Array.<number>} path 属性的路径，如果更新二层以上的属性则需要提供一个字符串数组，
+ *     如果该参数为`undefined`或`null`，则会直接对`source`对象进行更新操作
+ * @param {number} start 插入起始位置
+ * @param {number} deleteCount 删除的元素个数
+ * @param {...*} items 插入的元素
+ * @return {Object} 更新后的新对象
+ */
+export function splice(source, path, start, deleteCount, ...items) {
+    return update(source, buildPathObject(path, {$splice: [start, deleteCount, ...items]}));
 }
 
 /**

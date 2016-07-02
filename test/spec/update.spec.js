@@ -1,4 +1,4 @@
-import {default as update, withDiff, set, push, unshift, merge, defaults, invoke, isDiffNode as isDiffNodeFromUpdate} from 'update';
+import {default as update, withDiff, set, push, unshift, splice, merge, defaults, invoke, isDiffNode as isDiffNodeFromUpdate} from 'update';
 import {isDiffNode} from 'diffNode';
 
 function createSourceObject() {
@@ -134,6 +134,27 @@ describe('withDiff method', () => {
         expect(result).toEqual(source);
     });
 
+    it('should recognize splice command', () => {
+        let source = createSourceObject();
+        let [result, diff] = withDiff(source, {x: {y: {z: {$splice: [1, 1, 6, 7, 8]}}}});
+        expect(result.x.y.z).toEqual([1, 6, 7, 8, 3]);
+        expect(isDiffNode(diff.x.y.z)).toBe(true);
+        expect(diff).toEqual({
+            x: {
+                y: {
+                    z: {
+                        changeType: 'change',
+                        oldValue: [1, 2, 3],
+                        newValue: [1, 6, 7, 8, 3]
+                    }
+                }
+            }
+        });
+        expect(source).toEqual(createSourceObject());
+        result.x.y.z = [1, 2, 3];
+        expect(result).toEqual(source);
+    });
+
     it('should recognize merge command', () => {
         let source = createSourceObject();
         let [result, diff] = withDiff(source, {x: {y: {$merge: {a: 1, b: 2, z: source.x.y.z}}}});
@@ -247,6 +268,15 @@ describe('withDiff method', () => {
         expect(result.x.y.z).toEqual([0, 1, 2, 3]);
         expect(source).toEqual(createSourceObject());
         result.x.y.z.shift();
+        expect(result).toEqual(source);
+    });
+
+    it('should expose splice function', () => {
+        let source = createSourceObject();
+        let result = splice(source, ['x', 'y', 'z'], 1, 1, 6, 7, 8);
+        expect(result.x.y.z).toEqual([1, 6, 7, 8, 3]);
+        expect(source).toEqual(createSourceObject());
+        result.x.y.z = [1, 2, 3];
         expect(result).toEqual(source);
     });
 
