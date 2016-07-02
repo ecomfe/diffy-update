@@ -240,3 +240,8 @@ open doc/api/index.html
 ### 2.3.0
 
 - 修改了编译方式，现在所有文件会编译至根目录，以便NodeJS环境下使用
+
+### 2.4.0
+
+- 添加了`$splice`指令以及对应的`splice`快捷函数
+- 构建增加了压缩后的文件及SourceMap
