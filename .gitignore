@@ -4,3 +4,5 @@ node_modules
 test/coverage
 npm-debug.log
 /*.js
+!gulpfile.js
+map
