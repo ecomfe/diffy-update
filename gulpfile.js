@@ -8,7 +8,7 @@ var rename = require('gulp-rename');
 gulp.task(
     'clean',
     function () {
-        return gulp.src(['map', 'update.js', 'diffNode.js', 'merge.js', '*.min.js'], {read: false})
+        return gulp.src(['map', 'update.js', 'diffNode.js', 'merge.js', 'chain.js', '*.min.js'], {read: false})
             .pipe(clean());
     }
 );
