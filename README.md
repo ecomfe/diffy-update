@@ -343,3 +343,7 @@ open doc/api/index.html
 
 - 添加了`$splice`指令以及对应的`splice`快捷函数
 - 构建增加了压缩后的文件及SourceMap
+
+### 2.5.0
+
+- 增加了`chain`模块提供链式调用
