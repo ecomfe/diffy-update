@@ -119,6 +119,104 @@ console.log(diff);
 
 除此之外，本库还提供了一系列快捷函数，如`set`、`push`、`unshift`、`merge`、`defaults`等，这些函数可用于快速更新对象的某个属性，可以通过API文档进行查阅
 
+### 链式调用
+
+`chain`模块提供了链式更新一个对象的方法，使用方法如下：
+
+```javascript
+import chain from 'update/chain';
+
+let source = {
+    name: {
+        firstName: 'Navy',
+        lastName: 'Wong'
+    },
+    age: 20,
+    children: ['Alice', 'Bob']
+};
+let target = chain(source)
+    .set(['name', 'firstName'], 'Petty')
+    .set('age', 21)
+    .push('children', 'Cary');
+
+console.log(target);
+// {
+//     name: {
+//         firstName: 'Pretty',
+//         lastName: 'Wong'
+//     },
+//     age: 21,
+//     children: ['Alice', 'Bob', 'Petty']
+// }
+```
+
+在使用`chain`后得到的对象也有`withDiff`方法，可以同时获得更新后的对象和差异对象。
+
+`chain`后的对象每次调用对应的更新方法（如`set`、`push`等），都会得到一个新的对象，原有的对象不会受影响，比如：
+
+```javascript
+import chain from 'update/chain';
+
+let source = {
+    name: {
+        firstName: 'Navy',
+        lastName: 'Wong'
+    },
+    age: 20,
+    children: ['Alice', 'Bob']
+};
+let updateable = chain(source);
+
+let nameUpdated = updateable.set(['name', 'firstName'], 'Petty');
+let ageUpdated = nameUpdated.set('age', 21);
+
+console.log(nameUpdated);
+// 注意age并没有受影响
+//
+// {
+//     name: {
+//         firstName: 'Pretty',
+//         lastName: 'Wong'
+//     },
+//     age: 20,
+//     children: ['Alice', 'Bob', 'Petty']
+// }
+```
+
+`chain`是延迟执行的，所以假设已经对`foo`进行了操作，再对着`foo.bar`（或更深层级的属性）进行操作，会出现不可预期的行为，如以下代码：
+
+```javascript
+import chain from 'update/chain';
+
+let source = {
+    name: {
+        firstName: 'Navy',
+        lastName: 'Wong'
+    },
+    age: 20,
+    children: ['Alice', 'Bob']
+};
+
+let target = chain(source)
+    .set('ownedCar', {brand: 'Benz'})
+    .merge('ownedCar', {type: 'C Class'});
+// 注意ownedCar.type并没有生效
+//
+// {
+//     name: {
+//         firstName: 'Pretty',
+//         lastName: 'Wong'
+//     },
+//     age: 20,
+//     children: ['Alice', 'Bob', 'Petty'],
+//     ownedCar: {
+//         brand: 'Benz'
+//     }
+// }
+```
+
+这并不会给你预期的结果，所以在使用链式调用的时候要注意每个指令的路径。
+
 ### 差异合并
 
 在一个完整的应用模型中，如果每一次对数据的操作都映射为后续的操作（如UI更新），则可能出现一些不可预期的问题：
